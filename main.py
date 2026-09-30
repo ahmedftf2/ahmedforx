@@ -31,7 +31,6 @@ db = {
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 def connect_mt5():
-    """الاتصال بمنصة MetaTrader5 لجلب الأسعار"""
     if not MT5_AVAILABLE:
         return False
     if not mt5.initialize():
@@ -44,7 +43,6 @@ def connect_mt5():
     return authorized
 
 def get_live_market_price():
-    """سحب السعر الحقيقي والحي مباشرة من الحساب في MT5"""
     if connect_mt5():
         symbol = "XAUUSD"
         mt5.symbol_select(symbol, True)
@@ -60,17 +58,24 @@ def generate_secure_code(prefix):
     suffix = ''.join(random.choices(chars, k=6))
     return f"VIP-{prefix}-{suffix}"
 
+def is_user_subscribed(user_id):
+    if user_id == ADMIN_ID:
+        return True
+    if user_id not in db["users"]:
+        return False
+    expiry = db["users"][user_id].get("expiry")
+    if not expiry or expiry < datetime.datetime.now():
+        return False
+    return True
+
 def get_remaining_time(user_id):
     if user_id not in db["users"]:
-        return "24 ساعة (تجريبي مجاني)"
+        return "غير مفعل ❌"
     user_data = db["users"][user_id]
     expiry = user_data.get("expiry")
-    if not expiry:
-        return "منتهي"
-    now = datetime.datetime.now()
-    if expiry < now:
+    if not expiry or expiry < datetime.datetime.now():
         return "منتهي الصلاحية ❌"
-    diff = expiry - now
+    diff = expiry - datetime.datetime.now()
     days = diff.days
     hours = diff.seconds // 3600
     minutes = (diff.seconds % 3600) // 60
@@ -121,7 +126,7 @@ def generate_tiered_confidence_signal(current_price, timeframe, lot):
 
     report = (
         f"📊 تحليل صفقة الذهب الحية (JustMarkets-Demo3) 💲\n"
-        f"                                👑🇮🇶 الاستاذ احمد السيد 🇮🇶👑\n\n"
+        f"                                👑🇮🇶 الاستاذ احمد السيد  🇮🇶👑\n\n"
         f"🌐 **حالة السوق:** `{session_name}`\n\n"
         f"🪙 **سعر الدخول الحي:** `{current_price}`\n"
         f"⏱ **الفريم:** `{timeframe}` | **اللوت:** `{lot}`\n\n"
@@ -130,11 +135,18 @@ def generate_tiered_confidence_signal(current_price, timeframe, lot):
         f"{targets_text}\n"
         f"🛑 **وقف الخسارة (SL):** `{sl}`\n\n"
         f" 💲دامت لكم ارباحكم يا ابطال 💲\n"
-        f" 👑🇮🇶استاذكم احمد السيد🇮🇶👑\n"
+        f"                               👑🇮🇶 استاذكم احمد السيد 🇮🇶👑"
     )
     return report
 
 def get_clean_keyboard(is_admin=False, user_id=None):
+    if not is_admin and not is_user_subscribed(user_id):
+        # القفل للمشتركين غير المفعلين (زرين فقط حسب الطلب)
+        return InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔑 إدخال كود الاشتراك", callback_data="menu_activate")],
+            [InlineKeyboardButton("💬 مراسلة المطور لشراء الكود", url="https://t.me/V8V8VN")]
+        ])
+
     time_left = get_remaining_time(user_id) if user_id else "غير مسجل"
     settings = db.get("user_settings", {}).get(user_id, {"tf": "5M", "lot": 0.01})
     
@@ -145,18 +157,36 @@ def get_clean_keyboard(is_admin=False, user_id=None):
             InlineKeyboardButton(f"⏱ الفريم: [{settings['tf']}]", callback_data="menu_tf"),
             InlineKeyboardButton(f"⚖ اللوت: [{settings['lot']}]", callback_data="menu_lot")
         ],
-        [InlineKeyboardButton("🔑 تفعيل كود اشتراك رسمي", callback_data="menu_activate")],
+        [InlineKeyboardButton("🔑 تفعيل كود اشتراك جديد", callback_data="menu_activate")],
         [InlineKeyboardButton("💬 تليجرام المطور للاشتراك", url="https://t.me/V8V8VN")]
     ]
     if is_admin:
         keyboard.insert(0, [InlineKeyboardButton("🛡 غرفة القيادة والتحكم الإداري [ADMIN]", callback_data="menu_admin")])
     return InlineKeyboardMarkup(keyboard)
 
-def get_welcome_text(user_id=None):
+def get_welcome_text(user_id=None, is_admin=False):
+    if not is_admin and not is_user_subscribed(user_id):
+        return (
+            f"🦅 نورت البوت يا معلم التداول 🦅\n"
+            f"📊 وطلاب احمد السيد المحترم 📊\n"
+            f"اقدم لكم الاستاذ 🐦‍‍🔥 احمد السيد 🐦‍‍🔥\n"
+            f"خبير تداول الفوركس والذهب 🪙 \n"
+            f"🤴🏻 خبرة تحليل ومدارس على مدى 3 سنوات 🇮🇶👑\n"
+            f"📈خبرة صنع مؤشرات عالميا و وشرق اوسط 📉\n\n"
+            f"⚠ **عذراً، اشتراكك غير مفعل أو منتهي الصلاحية!**\n"
+            f"يرجى إدخال كود اشتراك رسمي أو مراسلة المطور للحصول على الكود.\n\n"
+            f"Telegram: @V8V8VN"
+        )
+
     time_left = get_remaining_time(user_id) if user_id else "غير مسجل"
     return (
         f"🦅 نورت البوت يا معلم التداول 🦅\n"
         f"📊 وطلاب احمد السيد المحترم 📊\n"
+        f"اقدم لكم الاستاذ 🐦‍‍🔥 احمد السيد 🐦‍‍🔥\n"
+        f"خبير تداول الفوركس والذهب 🪙 \n"
+        f"🤴🏻 خبرة تحليل ومدارس على مدى 3 سنوات 🇮🇶👑\n"
+        f"📈خبرة صنع مؤشرات عالميا و وشرق اوسط 📉\n\n"
+        f"الحساب المربوط حالياً: `1200504928` (JustMarkets-Demo3)\n\n"
         f"هاذا البوت يقدم:\n"
         f"🪙 توصيات الذهب VIP متصلة بالأسعار الحية 🪙\n\n"
         f"للاشتراك تواصل مع استاذ احمد عبر تليجرام:\n"
@@ -171,17 +201,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     if user.id in db["banned"]:
         return
-    if user.id not in db["users"] and user.id != ADMIN_ID:
-        db["users"][user.id] = {
-            "name": user.full_name,
-            "username": f"@{user.username}" if user.username else "بدون معرف",
-            "expiry": datetime.datetime.now() + datetime.timedelta(hours=24)
-        }
-    if user.id not in db["user_settings"]:
-        db["user_settings"][user.id] = {"tf": "5M", "lot": 0.01}
 
     is_admin = (user.id == ADMIN_ID)
-    msg = get_welcome_text(user.id)
+    msg = get_welcome_text(user.id, is_admin=is_admin)
     keyboard = get_clean_keyboard(is_admin=is_admin, user_id=user.id)
     
     if update.callback_query:
@@ -200,10 +222,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     is_admin = (user_id == ADMIN_ID)
 
     if data == "menu_start":
-        await query.edit_message_text(get_welcome_text(user_id), reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+        await query.edit_message_text(get_welcome_text(user_id, is_admin=is_admin), reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
         return
 
-    elif data == "menu_tf":
+    # التحقق من الصلاحية لبقية الأزرار إذا لم يكن مشتركاً أو أدمن
+    if not is_admin and not is_user_subscribed(user_id) and data not in ["menu_activate", "noop_c"]:
+        await query.answer("⚠ اشتراكك منتهي أو غير مفعل! يرجى إدخال كود صحيح.", show_alert=True)
+        return
+
+    if data == "menu_tf":
         tf_kb = InlineKeyboardMarkup([
             [InlineKeyboardButton("1M", callback_data="tf_1M"), InlineKeyboardButton("5M", callback_data="tf_5M"), InlineKeyboardButton("15M", callback_data="tf_15M")],
             [InlineKeyboardButton("30M", callback_data="tf_30M"), InlineKeyboardButton("1H", callback_data="tf_1H"), InlineKeyboardButton("4H", callback_data="tf_4H")],
@@ -214,9 +241,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data.startswith("tf_"):
         tf_val = data.replace("tf_", "")
+        if user_id not in db["user_settings"]:
+            db["user_settings"][user_id] = {"tf": "5M", "lot": 0.01}
         db["user_settings"][user_id]["tf"] = tf_val
         await query.answer(f"✅ تم ضبط الفريم: {tf_val}", show_alert=False)
-        await query.edit_message_text(get_welcome_text(user_id), reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+        await query.edit_message_text(get_welcome_text(user_id, is_admin=is_admin), reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
         return
 
     elif data == "menu_lot":
@@ -230,14 +259,16 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data.startswith("lot_"):
         lot_val = float(data.replace("lot_", ""))
+        if user_id not in db["user_settings"]:
+            db["user_settings"][user_id] = {"tf": "5M", "lot": 0.01}
         db["user_settings"][user_id]["lot"] = lot_val
         await query.answer(f"✅ تم ضبط اللوت: {lot_val}", show_alert=False)
-        await query.edit_message_text(get_welcome_text(user_id), reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+        await query.edit_message_text(get_welcome_text(user_id, is_admin=is_admin), reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
         return
 
     elif data == "menu_activate":
         context.user_data["waiting_for_code"] = True
-        await query.edit_message_text("🔑 **أرسل الآن كود الاشتراك الفريد الخاص بك:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="menu_start")]]), parse_mode="Markdown")
+        await query.edit_message_text("🔑 **أرسل الآن كود الاشتراك الفريد الخاص بك في الرسائل:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="menu_start")]]), parse_mode="Markdown")
         return
 
     elif data == "get_unified_signal":
@@ -258,12 +289,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_admin:
             return
         admin_kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🎟 توليد كود [ساعة] - 10$", callback_data="gen_1h"), InlineKeyboardButton("🎟 توليد كود [يوم] - 30$", callback_data="gen_1d")],
-            [InlineKeyboardButton("🎟 توليد كود [شهر] - 225$", callback_data="gen_30d")],
+            [InlineKeyboardButton("🎟 كود ساعة [15$]", callback_data="gen_1h"), InlineKeyboardButton("🎟 كود يوم [25$]", callback_data="gen_1d")],
+            [InlineKeyboardButton("🎟 كود أسبوع [55$]", callback_data="gen_1w"), InlineKeyboardButton("🎟 كود أسبوعين [90$]", callback_data="gen_2w")],
+            [InlineKeyboardButton("🎟 كود شهر VIP [225$]", callback_data="gen_30d")],
             [InlineKeyboardButton("👥 إدارة وحظر المشتركين", callback_data="admin_users_list")],
             [InlineKeyboardButton("🔙 العودة للرئيسية", callback_data="menu_start")]
         ])
-        await query.edit_message_text("🛡 **غرفة القيادة والتحكم الإداري:**", reply_markup=admin_kb, parse_mode="Markdown")
+        await query.edit_message_text("🛡 **غرفة القيادة والتحكم الإداري وأسعار الأكواد الجديدة:**", reply_markup=admin_kb, parse_mode="Markdown")
         return
 
     elif data.startswith("gen_"):
@@ -273,18 +305,27 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if ptype == "1h":
             code = generate_secure_code("1H")
             delta = datetime.timedelta(hours=1)
-            label = "ساعة"
+            label = "ساعة (15$)"
         elif ptype == "1d":
             code = generate_secure_code("1D")
             delta = datetime.timedelta(days=1)
-            label = "يوم"
+            label = "يوم (25$)"
+        elif ptype == "1w":
+            code = generate_secure_code("1W")
+            delta = datetime.timedelta(weeks=1)
+            label = "أسبوع (55$)"
+        elif ptype == "2w":
+            code = generate_secure_code("2W")
+            delta = datetime.timedelta(weeks=2)
+            label = "أسبوعين (90$)"
         else:
             code = generate_secure_code("30D")
             delta = datetime.timedelta(days=30)
-            label = "شهر"
+            label = "شهر VIP (225$)"
+            
         db["codes"][code] = {"delta": delta, "used": False}
         await query.edit_message_text(
-            f"✅ **تم توليد كود الـ {label}:**\n\n`{code}`",
+            f"✅ **تم توليد كود الـ {label} بنجاح:**\n\n`{code}`",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع للإدارة", callback_data="menu_admin")]]),
             parse_mode="Markdown"
         )
@@ -360,12 +401,13 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if base_time < datetime.datetime.now():
                 base_time = datetime.datetime.now()
             db["users"][user_id]["expiry"] = base_time + code_info["delta"]
-            await update.message.reply_text(f"🎉 **تم التفعيل بنجاح!**\n⏳ المتبقي: `{get_remaining_time(user_id)}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+            
+            await update.message.reply_text(f"🎉 **تم التفعيل بنجاح تام!**\n⏳ الوقت المتبقي: `{get_remaining_time(user_id)}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
         else:
-            await update.message.reply_text("❌ **الكود غير صحيح.**", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+            await update.message.reply_text("❌ **الكود غير صحيح أو منتهي.**", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
         return
     
-    await update.message.reply_text(get_welcome_text(user_id), reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+    await update.message.reply_text(get_welcome_text(user_id, is_admin=is_admin), reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
 
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
@@ -373,7 +415,7 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     
-    print("🚀 JustMarkets Live Price Bot Running...")
+    print("🚀 JustMarkets Bot Running with New Prices & Security...")
     app.run_polling()
 
 if __name__ == "__main__":
