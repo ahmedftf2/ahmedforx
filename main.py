@@ -81,31 +81,32 @@ def generate_full_institutional_analysis(current_price, timeframe, lot):
     confidence = random.randint(82, 98)
     
     if "شراء" in trade_dir:
-        tp1 = round(current_price + 3.5, 2)
-        tp2 = round(current_price + 7.2, 2)
-        tp3 = round(current_price + 12.5, 2)
-        sl = round(current_price - 4.2, 2)
+        tp1 = round(current_price + 3.8, 2)
+        tp2 = round(current_price + 7.5, 2)
+        tp3 = round(current_price + 13.0, 2)
+        sl = round(current_price - 4.5, 2)
     else:
-        tp1 = round(current_price - 3.5, 2)
-        tp2 = round(current_price - 7.2, 2)
-        tp3 = round(current_price - 12.5, 2)
-        sl = round(current_price + 4.2, 2)
+        tp1 = round(current_price - 3.8, 2)
+        tp2 = round(current_price - 7.5, 2)
+        tp3 = round(current_price - 13.0, 2)
+        sl = round(current_price + 4.5, 2)
 
     report = (
-        f"📊 **التحليل الاحترافي الشامل للذهب (VIP)** 📊\n"
-        f"👑 **الخبير:** الاستاذ احمد السيد 🇮🇶👑\n\n"
+        f"📊 صفقات الاستاذ وخبير التداول 💲\n"
+        f"                                👑🇮🇶 الاستاذ احمد السيد  🇮🇶👑\n\n"
         f"🌐 **حالة السوق والافتتاح:** `{session_name}`\n"
         f"📍 **وصف السيولة:** `{session_desc}`\n"
         f"🏫 **المدرسة المطبقة:** `{school_type}`\n"
-        f"🪙 **السعر الحي للذهب:** `{current_price}`\n"
-        f"⏱ **الفريم الزمني:** `{timeframe}` | ⚖ **اللوت:** `{lot}`\n\n"
-        f"⚡ **قرار الصفقة:** {trade_dir}\n"
-        f"🎯 **نسبة الثقة والتاكيد:** `{confidence}%`\n\n"
+        f"🪙 **السعر الحالي للذهب (حي):** `{current_price}`\n"
+        f"⏱ **الفريم:** `{timeframe}` | **اللوت:** `{lot}`\n\n"
+        f"⚡ **نوع الصفقة:** {trade_dir}\n"
+        f"🎯 **تاكيد الصفقة:** `{confidence}%`\n\n"
         f"🎯 **الهدف الأول (TP1):** `{tp1}`\n"
         f"🎯 **الهدف الثاني (TP2):** `{tp2}`\n"
         f"🚀 **الهدف الثالث (TP3):** `{tp3}`\n"
         f"🛑 **وقف الخسارة (SL):** `{sl}`\n\n"
-        f"💎 *تحليل دقيق ومبني على قواعد السيولة الحقيقية بدون أي قيود أو اشتراكات.*"
+        f" 💲دامت لكم ارباحكم يا ابطال 💲\n"
+        f"                               👑🇮🇶 استاذكم احمد السيد 🇮🇶👑"
     )
     return report
 
@@ -114,8 +115,8 @@ def get_clean_keyboard(is_admin=False, user_id=None):
     settings = db.get("user_settings", {}).get(user_id, {"tf": "5M", "lot": 0.01})
     
     keyboard = [
-        [InlineKeyboardButton(f"⏳ حالة الاشتراك: {time_left}", callback_data="noop_c")],
-        [InlineKeyboardButton("📊 جلب تحليل السوق الشامل وصفقة الذهب", callback_data="get_unified_signal")],
+        [InlineKeyboardButton(f"⏳ الوقت المتبقي لاشتراكك: {time_left}", callback_data="noop_c")],
+        [InlineKeyboardButton("📊 جلب تحليل وصفقة الذهب VIP", callback_data="get_unified_signal")],
         [
             InlineKeyboardButton(f"⏱ الفريم: [{settings['tf']}]", callback_data="menu_tf"),
             InlineKeyboardButton(f"⚖ اللوت: [{settings['lot']}]", callback_data="menu_lot")
@@ -128,20 +129,30 @@ def get_clean_keyboard(is_admin=False, user_id=None):
         ]
     ]
     if is_admin:
-        keyboard.insert(0, [InlineKeyboardButton("🛡 لوحة تحكم الإدارة الشاملة [ADMIN]", callback_data="menu_admin")])
+        keyboard.insert(0, [InlineKeyboardButton("🛡 غرفة القيادة وحماية النظام [ADMIN]", callback_data="menu_admin")])
     return InlineKeyboardMarkup(keyboard)
 
 def get_welcome_text(user_id=None):
     time_left = get_remaining_time(user_id) if user_id else "غير مسجل"
     return (
-        f"🦅 أهلاً بك يا معلم في بوت التداول المتكامل 🦅\n"
-        f"📊 إشراف الخبير: احمد السيد المحترم 🇮🇶👑\n\n"
-        f"🪙 **هذا البوت يضم كافة استراتيجيات ومدارس تحليل الذهب (السويفت، السيولة، العرض والطلب، والافتتاحات العالمية).**\n"
-        f"🚫 **ملاحظة:** البوت يعمل بكامل طاقته وصلاحياته بدون أي اشتراك إجباري بقنوات نهائياً!\n\n"
+        f"🦅 نورت البوت يا معلم التداول 🦅\n"
+        f"📊 وطلاب احمد السيد المحترم 📊\n"
+        f"اقدم لكم الاستاذ 🐦‍🔥 احمد السيد 🐦‍🔥\n"
+        f"خبير تداول الفوركس والذهب 🪙 \n"
+        f"🤴🏻 خبرة تحليل ومدارس على مدى 3 سنوات 🇮🇶👑\n"
+        f"📈خبرة صنع مؤشرات عالميا و وشرق اوسط 📉\n\n"
+        f"هاذا البوت يقدم \n"
+        f"🪙توصيات الذهب VIP 🪙\n"
+        f"💎ويقدم ايضا اشتراك 💸\n"
+        f" كورس لتعليم التداول 📊\n\n"
+        f"للاشتراك تواصل مع استاذ احمد \n"
+        f"Telegram:  @V8V8VN\n"
+        f"Instagram: _7ok6\n"
+        f"TikTok:  7ok6_\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
-        f"⏳ **اشتراكك الحالي:** `{time_left}`\n"
+        f"⏳ **حالة اشتراكك:** `{time_left}`\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
-        f"👇 اختر من الأزرار أدناه للتحكم بالفريم واللوت أو جلب التحليل الفوري:"
+        f"👇 اختر من الأزرار أدناه للتحكم بالفريم، اللوت، أو جلب الصفقة الحقيقية الفورية:"
     )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -189,7 +200,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("30M", callback_data="tf_30M"), InlineKeyboardButton("1H", callback_data="tf_1H"), InlineKeyboardButton("4H", callback_data="tf_4H")],
             [InlineKeyboardButton("🔙 رجوع", callback_data="menu_start")]
         ])
-        await query.edit_message_text("⏱ **اختر الفريم الزمني للتحليل:**", reply_markup=tf_kb, parse_mode="Markdown")
+        await query.edit_message_text("⏱ **اختر فريم التحليل المطلوب:**", reply_markup=tf_kb, parse_mode="Markdown")
         return
 
     elif data.startswith("tf_"):
@@ -207,7 +218,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("0.50", callback_data="lot_0.50"), InlineKeyboardButton("1.00", callback_data="lot_1.00"), InlineKeyboardButton("5.00", callback_data="lot_5.00")],
             [InlineKeyboardButton("🔙 رجوع", callback_data="menu_start")]
         ])
-        await query.edit_message_text("⚖ **اختر حجم العقد (اللوت):**", reply_markup=lot_kb, parse_mode="Markdown")
+        await query.edit_message_text("⚖ **اختر حجم اللوت المناسب:**", reply_markup=lot_kb, parse_mode="Markdown")
         return
 
     elif data.startswith("lot_"):
@@ -221,7 +232,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "menu_activate":
         context.user_data["waiting_for_code"] = True
-        await query.edit_message_text("🔑 **أرسل الآن كود الاشتراك الخاص بك في الرسائل لتفعيله فوراً:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="menu_start")]]), parse_mode="Markdown")
+        await query.edit_message_text("🔑 **أرسل الآن كود الاشتراك الفريد الخاص بك في الرسائل لتفعيله فوراً:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="menu_start")]]), parse_mode="Markdown")
         return
 
     elif data == "get_unified_signal":
@@ -233,7 +244,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         back_markup = InlineKeyboardMarkup([
             [InlineKeyboardButton("🔙 العودة للرئيسية", callback_data="menu_start")],
-            [InlineKeyboardButton("🔄 تحديث التحليل والسعر الحالي", callback_data="get_unified_signal")]
+            [InlineKeyboardButton("🔄 تحديث حالة الصفقة", callback_data="get_unified_signal")]
         ])
         
         await query.edit_message_text(report, parse_mode="Markdown", reply_markup=back_markup)
@@ -243,12 +254,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_admin:
             return
         admin_kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🎟 توليد كود [ساعة]", callback_data="gen_1h"), InlineKeyboardButton("🎟 توليد كود [يوم]", callback_data="gen_1d")],
-            [InlineKeyboardButton("🎟 توليد كود [أسبوع]", callback_data="gen_1w"), InlineKeyboardButton("🎟 توليد كود [شهر]", callback_data="gen_30d")],
-            [InlineKeyboardButton("👥 إدارة المشتركين والحظر", callback_data="admin_users_list")],
+            [InlineKeyboardButton("🎟 توليد كود [ساعة] - 10$", callback_data="gen_1h"), InlineKeyboardButton("🎟 توليد كود [يوم] - 30$", callback_data="gen_1d")],
+            [InlineKeyboardButton("🎟 توليد كود [أسبوع] - 80$", callback_data="gen_1w"), InlineKeyboardButton("🎟 توليد كود [أسبوعين] - 140$", callback_data="gen_2w")],
+            [InlineKeyboardButton("🎟 توليد كود [شهر] - 225$", callback_data="gen_30d")],
+            [InlineKeyboardButton("👥 إدارة وحظر المشتركين والأيديات", callback_data="admin_users_list")],
             [InlineKeyboardButton("🔙 العودة للرئيسية", callback_data="menu_start")]
         ])
-        await query.edit_message_text("🛡 **لوحة تحكم الأدمن لتوليد الأكواد وإدارة الأمان:**", reply_markup=admin_kb, parse_mode="Markdown")
+        await query.edit_message_text("🛡 **قائمة أسعار الأكواد وغرفة التحكم الإدارية:**\nاختر فئة الاشتراك لتوليد كود رسمي بالأسعار المطلوبة:", reply_markup=admin_kb, parse_mode="Markdown")
         return
 
     elif data.startswith("gen_"):
@@ -258,24 +270,28 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if ptype == "1h":
             code = generate_secure_code("1H")
             delta = datetime.timedelta(hours=1)
-            label = "ساعة واحدة"
+            label = "ساعة (10$)"
         elif ptype == "1d":
             code = generate_secure_code("1D")
             delta = datetime.timedelta(days=1)
-            label = "يوم كامل"
+            label = "يوم (30$)"
         elif ptype == "1w":
             code = generate_secure_code("1W")
             delta = datetime.timedelta(weeks=1)
-            label = "أسبوع"
+            label = "أسبوع (80$)"
+        elif ptype == "2w":
+            code = generate_secure_code("2W")
+            delta = datetime.timedelta(weeks=2)
+            label = "أسبوعين (140$)"
         else:
             code = generate_secure_code("30D")
             delta = datetime.timedelta(days=30)
-            label = "شهر كامل"
+            label = "شهر (225$)"
             
         db["codes"][code] = {"delta": delta, "used": False}
         
         await query.edit_message_text(
-            f"✅ **تم توليد كود الـ {label} بنجاح:**\n\n`{code}`\n\n*(أرسل هذا الكود للمشترك)*",
+            f"✅ **تم توليد كود الـ {label} بنجاح:**\n\n`{code}`\n\n*(انسخ هذا الكود وأعطه للزبون حصراً)*",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع للإدارة", callback_data="menu_admin")]]),
             parse_mode="Markdown"
         )
@@ -291,21 +307,21 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("🔓 إلغاء حظر مستخدم", callback_data="admin_prompt_unban")],
             [InlineKeyboardButton("🔙 رجوع للإدارة", callback_data="menu_admin")]
         ])
-        await query.edit_message_text(f"👥 **إدارة الأعضاء:**\n- المشتركين: `{users_count}`\n- المحظورين: `{banned_count}`", reply_markup=admin_users_kb, parse_mode="Markdown")
+        await query.edit_message_text(f"👥 **إدارة المشتركين والأمان:**\n- المشتركين النشطين: `{users_count}`\n- المحظورين أمنياً: `{banned_count}`", reply_markup=admin_users_kb, parse_mode="Markdown")
         return
 
     elif data == "admin_prompt_ban":
         context.user_data["waiting_for_ban_id"] = True
-        await query.edit_message_text("🔨 **أرسل أيدي (ID) المستخدم المراد حظره:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="admin_users_list")]]), parse_mode="Markdown")
+        await query.edit_message_text("🔨 **أرسل الآن (أيدي المستخدم - ID) المراد حظره:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="admin_users_list")]]), parse_mode="Markdown")
         return
 
     elif data == "admin_prompt_unban":
         context.user_data["waiting_for_unban_id"] = True
-        await query.edit_message_text("🔓 **أرسل أيدي (ID) المستخدم المراد إلغاء حظره:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="admin_users_list")]]), parse_mode="Markdown")
+        await query.edit_message_text("🔓 **أرسل الآن (أيدي المستخدم - ID) المراد رفع الحظر عنه:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="admin_users_list")]]), parse_mode="Markdown")
         return
 
     elif data == "noop_c":
-        await query.answer("ℹ النظام يعمل بكامل الميزات بدون اشتراك إجباري.", show_alert=False)
+        await query.answer("ℹ النظام فعال بدون قنوات أو اشتراك إجباري.", show_alert=False)
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -319,7 +335,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             target_id = int(update.message.text.strip())
             db["banned"].add(target_id)
-            await update.message.reply_text(f"✅ تم حظر المستخدم: `{target_id}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+            await update.message.reply_text(f"✅ تم حظر المستخدم برقم الأيدي: `{target_id}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
         except ValueError:
             await update.message.reply_text("❌ أيدي غير صالح.", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id))
         return
@@ -330,9 +346,9 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             target_id = int(update.message.text.strip())
             if target_id in db["banned"]:
                 db["banned"].remove(target_id)
-                await update.message.reply_text(f"✅ تم رفع الحظر عن: `{target_id}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+                await update.message.reply_text(f"✅ تم رفع الحظر عن المستخدم: `{target_id}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
             else:
-                await update.message.reply_text("⚠ الأيدي غير موجود بالمحظورين.", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id))
+                await update.message.reply_text("⚠ الأيدي غير موجود في قائمة المحظورين.", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id))
         except ValueError:
             await update.message.reply_text("❌ أيدي غير صالح.", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id))
         return
@@ -344,7 +360,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         if code_info:
             if code_info["used"]:
-                await update.message.reply_text("⚠️ **هذا الكود مستخدم من قبل!**", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+                await update.message.reply_text("⚠️ **هذا الكود مستخدم مسبقاً ولا يمكن استخدامه مرة أخرى!**", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
                 return
                 
             code_info["used"] = True
@@ -357,9 +373,9 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 base_time = datetime.datetime.now()
             db["users"][user_id]["expiry"] = base_time + code_info["delta"]
             
-            await update.message.reply_text(f"🎉 **تم تفعيل الاشتراك بنجاح!**\n⏳ المتبقي: `{get_remaining_time(user_id)}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+            await update.message.reply_text(f"🎉 **تم تفعيل الاشتراك بنجاح تام!**\n⏳ الوقت المتبقي: `{get_remaining_time(user_id)}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
         else:
-            await update.message.reply_text("❌ **الكود غير صحيح أو منتهي الصلاحية.**", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+            await update.message.reply_text("❌ **الكود غير صحيح أو منتهي.** تأكد من نسخه بدقة.", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
         return
     
     await update.message.reply_text(get_welcome_text(user_id), reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
@@ -370,7 +386,7 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     
-    print("🚀 Ultimate Full Strategy Bot Running (No Forced Subscription)...")
+    print("🚀 Ultimate Institutional Trading Bot Running (Fully Restored & Clean)...")
     app.run_polling()
 
 if __name__ == "__main__":
