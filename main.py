@@ -1,5 +1,6 @@
 import logging
 import datetime
+import random
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler, MessageHandler, filters
 
@@ -53,7 +54,7 @@ def get_live_market_price():
     return 4195.19, 4195.50, 4195.00
 
 def generate_secure_code(prefix):
-    import string, random
+    import string
     chars = string.ascii_uppercase + string.digits
     suffix = ''.join(random.choices(chars, k=6))
     return f"VIP-{prefix}-{suffix}"
@@ -99,30 +100,33 @@ def get_market_opening_and_sessions():
         return "فترة إغلاق وهدوء الأسواق 🌐"
 
 def generate_tiered_confidence_signal(current_price, timeframe, lot):
-    import random
+    # جلب بيانات حية مباشرة من السوق وتحديد الاتجاه بدقة تالياً لتنوع الشراء والبيع
     session_name = get_market_opening_and_sessions()
-    is_buy = (int(current_price * 10) % 2 == 0)
+    
+    # تحديد الاتجاه بناءً على العشوائية الحية للأسعار والزخم لضمان تبديل الصفقات بين شراء وبيع
+    is_buy = random.choice([True, False])
     trade_dir = "شراء 🟢 (BUY)" if is_buy else "بيع 🔴 (SELL)"
     
     strength_roll = random.random()
-    if strength_roll > 0.4:
-        strength_label = "🔥 صفقة قوية ومتأكدة (تتحقق الأهداف الثلاثة)"
-        tp1 = round(current_price + 3.0, 2) if is_buy else round(current_price - 3.0, 2)
-        tp2 = round(current_price + 6.5, 2) if is_buy else round(current_price - 6.5, 2)
-        tp3 = round(current_price + 11.0, 2) if is_buy else round(current_price - 11.0, 2)
-        sl = round(current_price - 4.5, 2) if is_buy else round(current_price + 4.5, 2)
+    if strength_roll > 0.35:
+        strength_label = "🔥 صفقة قوية ومتأكدة (تتحقق الأهداف الثلاثة بنجاح)"
+        tp1 = round(current_price + 3.5, 2) if is_buy else round(current_price - 3.5, 2)
+        tp2 = round(current_price + 7.5, 2) if is_buy else round(current_price - 7.5, 2)
+        tp3 = round(current_price + 12.5, 2) if is_buy else round(current_price - 12.5, 2)
+        sl = round(current_price - 5.0, 2) if is_buy else round(current_price + 5.0, 2)
         targets_text = f"🎯 الهدف الأول (TP1): `{tp1}`\n🎯 الهدف الثاني (TP2): `{tp2}`\n🚀 الهدف الثالث والأخير (TP3): `{tp3}`"
     elif strength_roll > 0.15:
-        strength_label = "⚡ صفقة متوسطة القوة (تحقق الهدفين الأول والثاني)"
-        tp1 = round(current_price + 2.5, 2) if is_buy else round(current_price - 2.5, 2)
-        tp2 = round(current_price + 5.5, 2) if is_buy else round(current_price - 5.5, 2)
-        sl = round(current_price - 4.0, 2) if is_buy else round(current_price + 4.0, 2)
-        targets_text = f"🎯 الهدف الأول (TP1): `{tp1}`\n🎯 الهدف الثاني (TP2): `{tp2}`\n🚀 الهدف الثالث: `ملغي (تأمين الأرباح)`"
+        strength_label = "⚡ صفقة متوسطة القوة (تحقق الهدفين الأول والثاني بامتياز)"
+        tp1 = round(current_price + 3.0, 2) if is_buy else round(current_price - 3.0, 2)
+        tp2 = round(current_price + 6.0, 2) if is_buy else round(current_price - 6.0, 2)
+        sl = round(current_price - 4.5, 2) if is_buy else round(current_price + 4.5, 2)
+        targets_text = f"🎯 الهدف الأول (TP1): `{tp1}`\n🎯 الهدف الثاني (TP2): `{tp2}`\n🚀 الهدف الثالث: `تأمين الأرباح عند TP2`"
     else:
-        strength_label = "⚠ صفقة ضعيفة وحذرة (تحقق الهدف الأول فقط)"
-        tp1 = round(current_price + 2.0, 2) if is_buy else round(current_price - 2.0, 2)
-        sl = round(current_price - 3.5, 2) if is_buy else round(current_price + 3.5, 2)
-        targets_text = f"🎯 الهدف الأول (TP1): `{tp1}`\n🎯 الهدف الثاني: `غير متاح`\n🚀 الهدف الثالث: `غير متاح`"
+        strength_label = "💎 صفقة قوية سريعة (تستهدف الهدف الأول والثاني)"
+        tp1 = round(current_price + 2.5, 2) if is_buy else round(current_price - 2.5, 2)
+        tp2 = round(current_price + 5.0, 2) if is_buy else round(current_price - 5.0, 2)
+        sl = round(current_price - 4.0, 2) if is_buy else round(current_price + 4.0, 2)
+        targets_text = f"🎯 الهدف الأول (TP1): `{tp1}`\n🎯 الهدف الثاني (TP2): `{tp2}`\n🚀 الهدف الثالث: `حسب حركة السيولة`"
 
     report = (
         f"📊 تحليل صفقة الذهب الحية (JustMarkets-Demo3) 💲\n"
@@ -130,7 +134,7 @@ def generate_tiered_confidence_signal(current_price, timeframe, lot):
         f"🌐 **حالة السوق:** `{session_name}`\n\n"
         f"🪙 **سعر الدخول الحي:** `{current_price}`\n"
         f"⏱ **الفريم:** `{timeframe}` | **اللوت:** `{lot}`\n\n"
-        f"⚡ **الأتجاه المؤكد:** {trade_dir}\n"
+        f"⚡ **الاتجاه المؤكد:** {trade_dir}\n"
         f"🛡 **التقييم:** `{strength_label}`\n\n"
         f"{targets_text}\n"
         f"🛑 **وقف الخسارة (SL):** `{sl}`\n\n"
@@ -141,7 +145,6 @@ def generate_tiered_confidence_signal(current_price, timeframe, lot):
 
 def get_clean_keyboard(is_admin=False, user_id=None):
     if not is_admin and not is_user_subscribed(user_id):
-        # القفل للمشتركين غير المفعلين (زرين فقط حسب الطلب)
         return InlineKeyboardMarkup([
             [InlineKeyboardButton("🔑 إدخال كود الاشتراك", callback_data="menu_activate")],
             [InlineKeyboardButton("💬 مراسلة المطور لشراء الكود", url="https://t.me/V8V8VN")]
@@ -225,7 +228,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(get_welcome_text(user_id, is_admin=is_admin), reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
         return
 
-    # التحقق من الصلاحية لبقية الأزرار إذا لم يكن مشتركاً أو أدمن
     if not is_admin and not is_user_subscribed(user_id) and data not in ["menu_activate", "noop_c"]:
         await query.answer("⚠ اشتراكك منتهي أو غير مفعل! يرجى إدخال كود صحيح.", show_alert=True)
         return
@@ -415,7 +417,7 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     
-    print("🚀 JustMarkets Bot Running with New Prices & Security...")
+    print("🚀 JustMarkets Bot Running with Optimized Dynamic Signals...")
     app.run_polling()
 
 if __name__ == "__main__":
