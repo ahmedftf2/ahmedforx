@@ -3,7 +3,7 @@ import datetime
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler, MessageHandler, filters
 
-# استيراد مكتبة MetaTrader5 للربط المباشر مع الحساب
+# استيراد مكتبة MetaTrader5 للأسعار الحية
 try:
     import MetaTrader5 as mt5
     MT5_AVAILABLE = True
@@ -13,7 +13,7 @@ except ImportError:
 TOKEN = "8894419194:AAH7DLmOtug7FPhasXfKVMGKkHlt5n7Dw4s"
 ADMIN_ID = 5796443586
 
-# بيانات حساب JustMarkets التي قمت بتزويدي بها
+# بيانات حساب JustMarkets لجلب الأسعار الحية الحقيقية
 MT5_CONFIG = {
     "login": 1200504928,
     "password": "ftfahmed22$A",
@@ -25,20 +25,17 @@ db = {
     "banned": set(),
     "last_signal": "",
     "user_settings": {},
-    "codes": {},
-    "auto_trading_enabled": False  # حالة التداول التلقائي (مفقف افتراضياً للأمان)
+    "codes": {}
 }
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 def connect_mt5():
-    """الاتصال بمنصة MetaTrader5 باستخدام حسابك المخصص"""
+    """الاتصال بمنصة MetaTrader5 لجلب الأسعار"""
     if not MT5_AVAILABLE:
         return False
     if not mt5.initialize():
         return False
-    
-    # محاولة تسجيل الدخول بالحساب والسيرفر المحدد
     authorized = mt5.login(
         login=MT5_CONFIG["login"],
         password=MT5_CONFIG["password"],
@@ -47,7 +44,7 @@ def connect_mt5():
     return authorized
 
 def get_live_market_price():
-    """سحب السعر الحقيقي والحي مباشرة من حسابك في MT5"""
+    """سحب السعر الحقيقي والحي مباشرة من الحساب في MT5"""
     if connect_mt5():
         symbol = "XAUUSD"
         mt5.symbol_select(symbol, True)
@@ -56,46 +53,6 @@ def get_live_market_price():
             live_price = (tick.bid + tick.ask) / 2
             return round(float(live_price), 2), tick.ask, tick.bid
     return 4195.19, 4195.50, 4195.00
-
-def execute_auto_trade(is_buy, lot, sl, tp):
-    """تنفيذ صفقة حقيقية تلقائياً في منصة MT5 بحسابك"""
-    if not connect_mt5():
-        return False, "فشل الاتصال بمنصة MT5"
-    
-    symbol = "XAUUSD"
-    mt5.symbol_select(symbol, True)
-    
-    # تحديد نوع الأمر وسعر التنفيذ المناسب
-    tick = mt5.symbol_info_tick(symbol)
-    if tick is None:
-        return False, "تعذر جلب تسعيرة التك اللحظية"
-        
-    price = tick.ask if is_buy else tick.bid
-    order_type = mt5.ORDER_TYPE_BUY if is_buy else mt5.ORDER_TYPE_SELL
-    
-    request = {
-        "action": mt5.TRADE_ACTION_DEAL,
-        "symbol": symbol,
-        "volume": float(lot),
-        "type": order_type,
-        "price": price,
-        "sl": float(sl),
-        "tp": float(tp),
-        "deviation": 20,
-        "magic": 234000,
-        "comment": "Auto-Bot by Ahmed Elsayed",
-        "type_time": mt5.ORDER_TIME_GTC,
-        "type_filling": mt5.ORDER_FILLING_FOK,
-    }
-    
-    result = mt5.order_send(request)
-    if result is None:
-        return False, f"خطأ غير معروف في الإرسال: {mt5.last_error()}"
-        
-    if result.retcode != mt5.TRADE_RETCODE_DONE:
-        return False, f"رفض البروكر الصفقة: {result.retcode}"
-        
-    return True, f"تم فتح الصفقة بنجاح برقم أذن: {result.order}"
 
 def generate_secure_code(prefix):
     import string, random
@@ -162,42 +119,28 @@ def generate_tiered_confidence_signal(current_price, timeframe, lot):
         sl = round(current_price - 3.5, 2) if is_buy else round(current_price + 3.5, 2)
         targets_text = f"🎯 الهدف الأول (TP1): `{tp1}`\n🎯 الهدف الثاني: `غير متاح`\n🚀 الهدف الثالث: `غير متاح`"
 
-    # التنفيذ التلقائي الفعلي في المنصة إذا كانت الميزة مفعلة
-    auto_status_msg = ""
-    if db["auto_trading_enabled"]:
-        success, msg_res = execute_auto_trade(is_buy, lot, sl, tp1)
-        if success:
-            auto_status_msg = f"\n\n🤖 **حالة التداول التلقائي:** `تم تنفيذ الصفقة في حسابك بنجاح ✅ ({msg_res})`"
-        else:
-            auto_status_msg = f"\n\n🤖 **حالة التداول التلقائي:** `فشل التنفيذ ❌ ({msg_res})`"
-    else:
-        auto_status_msg = f"\n\n🤖 **حالة التداول التلقائي:** `متوقف حالياً (وضع الإرسال اليدوي)`"
-
     report = (
         f"📊 تحليل صفقة الذهب الحية (JustMarkets-Demo3) 💲\n"
-        f"                                👑🇮🇶 الاستاذ احمد السيد  🇮🇶👑\n\n"
+        f"                                👑🇮🇶 الاستاذ احمد السيد 🇮🇶👑\n\n"
         f"🌐 **حالة السوق:** `{session_name}`\n\n"
         f"🪙 **سعر الدخول الحي:** `{current_price}`\n"
         f"⏱ **الفريم:** `{timeframe}` | **اللوت:** `{lot}`\n\n"
         f"⚡ **الأتجاه المؤكد:** {trade_dir}\n"
         f"🛡 **التقييم:** `{strength_label}`\n\n"
         f"{targets_text}\n"
-        f"🛑 **وقف الخسارة (SL):** `{sl}`"
-        f"{auto_status_msg}\n\n"
+        f"🛑 **وقف الخسارة (SL):** `{sl}`\n\n"
         f" 💲دامت لكم ارباحكم يا ابطال 💲\n"
-        f"                               👑🇮🇶 استاذكم احمد السيد 🇮🇶👑"
+        f" 👑🇮🇶استاذكم احمد السيد🇮🇶👑\n"
     )
     return report
 
 def get_clean_keyboard(is_admin=False, user_id=None):
     time_left = get_remaining_time(user_id) if user_id else "غير مسجل"
     settings = db.get("user_settings", {}).get(user_id, {"tf": "5M", "lot": 0.01})
-    auto_state = "🟢 مفعل (يتداول تلقائياً)" if db["auto_trading_enabled"] else "🔴 متوقف (توصيات فقط)"
     
     keyboard = [
         [InlineKeyboardButton(f"⏳ اشتراكك: {time_left}", callback_data="noop_c")],
-        [InlineKeyboardButton(f"⚙️ التداول التلقائي في حسابك: {auto_state}", callback_data="toggle_auto_trade")],
-        [InlineKeyboardButton("📊 جلب صفقة وتنفيذها بالأسعار الحية", callback_data="get_unified_signal")],
+        [InlineKeyboardButton("📊 جلب صفقة بالأسعار الحية", callback_data="get_unified_signal")],
         [
             InlineKeyboardButton(f"⏱ الفريم: [{settings['tf']}]", callback_data="menu_tf"),
             InlineKeyboardButton(f"⚖ اللوت: [{settings['lot']}]", callback_data="menu_lot")
@@ -214,10 +157,8 @@ def get_welcome_text(user_id=None):
     return (
         f"🦅 نورت البوت يا معلم التداول 🦅\n"
         f"📊 وطلاب احمد السيد المحترم 📊\n"
-        f"الحساب المربوط حالياً: `1200504928` (JustMarkets-Demo3)\n\n"
         f"هاذا البوت يقدم:\n"
-        f"🪙 توصيات الذهب VIP متصلة بمنصتك حقيقياً 🪙\n"
-        f"🤖 ميزة التداول التلقائي (تفتح الصفقة عندك تلقائياً بمجرد طلبها) 🚀\n\n"
+        f"🪙 توصيات الذهب VIP متصلة بالأسعار الحية 🪙\n\n"
         f"للاشتراك تواصل مع استاذ احمد عبر تليجرام:\n"
         f"Telegram: @V8V8VN\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
@@ -259,16 +200,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     is_admin = (user_id == ADMIN_ID)
 
     if data == "menu_start":
-        await query.edit_message_text(get_welcome_text(user_id), reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
-        return
-
-    elif data == "toggle_auto_trade":
-        if not is_admin:
-            await query.answer("⚠ ميزة التحكم بالتداول التلقائي مخصصة لمالك الحساب والأدمن فقط!", show_alert=True)
-            return
-        db["auto_trading_enabled"] = not db["auto_trading_enabled"]
-        state_txt = "تم تفعيل التداول التلقائي بنجاح! 🟢" if db["auto_trading_enabled"] else "تم إيقاف التداول التلقائي. 🔴"
-        await query.answer(state_txt, show_alert=True)
         await query.edit_message_text(get_welcome_text(user_id), reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
         return
 
@@ -442,7 +373,7 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     
-    print("🚀 JustMarkets Live Auto-Trading MT5 Bot Running...")
+    print("🚀 JustMarkets Live Price Bot Running...")
     app.run_polling()
 
 if __name__ == "__main__":
