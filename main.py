@@ -164,8 +164,6 @@ def get_welcome_text(user_id=None):
         f" كورس لتعليم التداول 📊\n\n"
         f"للاشتراك تواصل مع استاذ احمد \n"
         f"Telegram:  @V8V8VN\n"
-        f"Instagram: _7ok6\n"
-        f"TikTok:  7ok6_\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
         f"⏳ **حالة اشتراكك:** `{time_left}`\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
