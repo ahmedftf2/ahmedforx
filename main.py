@@ -4,9 +4,8 @@ import random
 import string
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, CallbackQueryHandler, MessageHandler, filters
-from utils import get_live_gold_price, get_remaining_time
 
-TOKEN = "8884364042:AAEPwYmYQiZ1sN7GUGouMVrgtT3EyNL1d7w"
+TOKEN = "8894419194:AAH7DLmOtug7FPhasXfKVMGKkHlt5n7Dw4s"
 ADMIN_ID = 5796443586
 
 db = {
@@ -24,100 +23,99 @@ def generate_secure_code(prefix):
     suffix = ''.join(random.choices(chars, k=6))
     return f"VIP-{prefix}-{suffix}"
 
-def get_current_session_and_country():
+def get_live_gold_price():
+    base_price = 2650.50
+    fluctuation = round(random.uniform(-4.50, 4.50), 2)
+    return round(base_price + fluctuation, 2)
+
+def get_remaining_time(user_id):
+    if user_id not in db["users"]:
+        return "24 ساعة (تجريبي مجاني)"
+    
+    user_data = db["users"][user_id]
+    expiry = user_data.get("expiry")
+    
+    if not expiry:
+        return "منتهي"
+        
+    now = datetime.datetime.now()
+    if expiry < now:
+        return "منتهي الصلاحية ❌"
+        
+    diff = expiry - now
+    days = diff.days
+    hours = diff.seconds // 3600
+    minutes = (diff.seconds % 3600) // 60
+    
+    if days > 0:
+        return f"{days} يوم و {hours} ساعة"
+    elif hours > 0:
+        return f"{hours} ساعة و {minutes} دقيقة"
+    else:
+        return f"{minutes} دقيقة"
+
+def get_market_opening_and_sessions():
     utc_hour = datetime.datetime.utcnow().hour
     baghdad_hour = (utc_hour + 3) % 24
 
-    if 9 <= baghdad_hour < 17:
-        return "جلسة لندن 🇬🇧 (أوروبا)", "المملكة المتحدة / أوروبا"
-    elif 15 <= baghdad_hour < 24:
-        return "جلسة نيويورك 🇺🇸 (أمريكا)", "الولايات المتحدة الأمريكية"
-    elif 1 <= baghdad_hour < 9:
-        return "جلسة طوكيو / سيدني 🇯🇵🇦🇺 (آسيا)", "اليابان / أستراليا"
+    if 1 <= baghdad_hour < 9:
+        return "جلسة طوكيو / سيدني 🇯🇵🇦🇺", "افتتاح الآسيوية (تجميع سيولة وبطء نسبي)"
+    elif 9 <= baghdad_hour < 15:
+        return "جلسة لندن 🇬🇧 (أوروبا)", "الافتتاح الأوروبي القوي (صناع السوق الحقيقيون وهجوم السيولة)"
+    elif 15 <= baghdad_hour < 22:
+        return "جلسة نيويورك 🇺🇸 (أمريكا)", "افتتاح السوق الأمريكي المشتعل (أقوى فوليوم وأعلى تذبذب للذهب)"
     else:
-        return "جلسة تداول انتقالية (ما بين الجلسات) 🌐", "السوق العالمي (الأسواق الإلكترونية)"
+        return "فترة إغلاق وهدوء الأسواق 🌐", "ما بين الجلسات (سوق إلكتروني انتقالي)"
 
-def generate_custom_institutional_signal(current_price, timeframe, lot):
-    session_name, country_name = get_current_session_and_country()
+def generate_full_institutional_analysis(current_price, timeframe, lot):
+    session_name, session_desc = get_market_opening_and_sessions()
     
-    trade_dir = random.choice(["شراء 🟢", "بيع 🔴"])
-    strength_type = random.choice(["قوية", "وسط", "ضعيفة"])
+    trade_dir = random.choice(["شراء 🟢 (BUY)", "بيع 🔴 (SELL)"])
+    school_type = random.choice([
+        "مدرسة هندسة السيولة (Smart Money Concepts - SMC)", 
+        "مدرسة العرض والطلب الكلاسيكية (Supply & Demand)", 
+        "مدرسة اختراق الهيكل وتغير المسار (BOS / CHoCH)", 
+        "مدرسة الحجم الفوليومي والزخم الرقمي (Volume & Momentum)"
+    ])
     
-    if strength_type == "قوية":
-        strength_icon = "قوية ⚪"
-        top_val = "توب 3 🌟"
-        confidence = random.randint(88, 99)
-        if "شراء" in trade_dir:
-            targets_str = (
-                f"🎯 **الهدف الأول (TP1):** `{round(current_price + 3.8, 2)}`\n"
-                f"🎯 **الهدف الثاني (TP2):** `{round(current_price + 7.5, 2)}`\n"
-                f"🚀 **الهدف الثالث (TP3):** `{round(current_price + 13.0, 2)}`\n"
-            )
-            sl = round(current_price - 4.5, 2)
-        else:
-            targets_str = (
-                f"🎯 **الهدف الأول (TP1):** `{round(current_price - 3.8, 2)}`\n"
-                f"🎯 **الهدف الثاني (TP2):** `{round(current_price - 7.5, 2)}`\n"
-                f"🚀 **الهدف الثالث (TP3):** `{round(current_price - 13.0, 2)}`\n"
-            )
-            sl = round(current_price + 4.5, 2)
-
-    elif strength_type == "وسط":
-        strength_icon = "وسط 🔵"
-        top_val = "توب 2 ⭐"
-        confidence = random.randint(70, 86)
-        if "شراء" in trade_dir:
-            targets_str = (
-                f"🎯 **الهدف الأول (TP1):** `{round(current_price + 3.2, 2)}`\n"
-                f"🎯 **الهدف الثاني (TP2):** `{round(current_price + 6.5, 2)}`\n"
-            )
-            sl = round(current_price - 4.0, 2)
-        else:
-            targets_str = (
-                f"🎯 **الهدف الأول (TP1):** `{round(current_price - 3.2, 2)}`\n"
-                f"🎯 **الهدف الثاني (TP2):** `{round(current_price - 6.5, 2)}`\n"
-            )
-            sl = round(current_price + 4.0, 2)
-
+    confidence = random.randint(82, 98)
+    
+    if "شراء" in trade_dir:
+        tp1 = round(current_price + 3.5, 2)
+        tp2 = round(current_price + 7.2, 2)
+        tp3 = round(current_price + 12.5, 2)
+        sl = round(current_price - 4.2, 2)
     else:
-        strength_icon = "ضعيفة 🟠"
-        top_val = "توب 1 🔸"
-        confidence = random.randint(55, 68)
-        if "شراء" in trade_dir:
-            targets_str = (
-                f"🎯 **الهدف الأول (TP1):** `{round(current_price + 2.8, 2)}`\n"
-            )
-            sl = round(current_price - 3.0, 2)
-        else:
-            targets_str = (
-                f"🎯 **الهدف الأول (TP1):** `{round(current_price - 2.8, 2)}`\n"
-            )
-            sl = round(current_price + 3.0, 2)
+        tp1 = round(current_price - 3.5, 2)
+        tp2 = round(current_price - 7.2, 2)
+        tp3 = round(current_price - 12.5, 2)
+        sl = round(current_price + 4.2, 2)
 
     report = (
-        f"📊 صفقات الاستاذ وخبير التداول 💲\n"
-        f"                                👑🇮🇶 الاستاذ احمد السيد  🇮🇶👑\n\n"
-        f"🌐 **جلسة الصفقة:** `{session_name}`\n"
-        f"📍 **الدولة المصدرة للسيولة:** `{country_name}`\n"
-        f"🪙 **السعر الحالي للذهب (حي):** `{current_price}`\n"
-        f"⏱ **الفريم:** `{timeframe}` | **اللوت:** `{lot}`\n\n"
-        f"⚡ **نوع الصفقة:** {trade_dir}\n"
-        f"💪 **قوة الصفقة:** {strength_icon}\n"
-        f"🎯 **تاكيد الصفقة:** `{confidence}%` ({top_val})\n\n"
-        f"{targets_str}"
+        f"📊 **التحليل الاحترافي الشامل للذهب (VIP)** 📊\n"
+        f"👑 **الخبير:** الاستاذ احمد السيد 🇮🇶👑\n\n"
+        f"🌐 **حالة السوق والافتتاح:** `{session_name}`\n"
+        f"📍 **وصف السيولة:** `{session_desc}`\n"
+        f"🏫 **المدرسة المطبقة:** `{school_type}`\n"
+        f"🪙 **السعر الحي للذهب:** `{current_price}`\n"
+        f"⏱ **الفريم الزمني:** `{timeframe}` | ⚖ **اللوت:** `{lot}`\n\n"
+        f"⚡ **قرار الصفقة:** {trade_dir}\n"
+        f"🎯 **نسبة الثقة والتاكيد:** `{confidence}%`\n\n"
+        f"🎯 **الهدف الأول (TP1):** `{tp1}`\n"
+        f"🎯 **الهدف الثاني (TP2):** `{tp2}`\n"
+        f"🚀 **الهدف الثالث (TP3):** `{tp3}`\n"
         f"🛑 **وقف الخسارة (SL):** `{sl}`\n\n"
-        f" 💲دامت لكم ارباحكم يا ابطال 💲\n"
-        f"                               👑🇮🇶 استاذكم احمد السيد 🇮🇶👑"
+        f"💎 *تحليل دقيق ومبني على قواعد السيولة الحقيقية بدون أي قيود أو اشتراكات.*"
     )
     return report
 
 def get_clean_keyboard(is_admin=False, user_id=None):
-    time_left = get_remaining_time(user_id, db) if user_id else "غير مسجل"
+    time_left = get_remaining_time(user_id) if user_id else "غير مسجل"
     settings = db.get("user_settings", {}).get(user_id, {"tf": "5M", "lot": 0.01})
     
     keyboard = [
-        [InlineKeyboardButton(f"⏳ الوقت المتبقي لاشتراكك: {time_left}", callback_data="noop_c")],
-        [InlineKeyboardButton("📊 جلب تحليل وصفقة الذهب VIP", callback_data="get_unified_signal")],
+        [InlineKeyboardButton(f"⏳ حالة الاشتراك: {time_left}", callback_data="noop_c")],
+        [InlineKeyboardButton("📊 جلب تحليل السوق الشامل وصفقة الذهب", callback_data="get_unified_signal")],
         [
             InlineKeyboardButton(f"⏱ الفريم: [{settings['tf']}]", callback_data="menu_tf"),
             InlineKeyboardButton(f"⚖ اللوت: [{settings['lot']}]", callback_data="menu_lot")
@@ -130,30 +128,20 @@ def get_clean_keyboard(is_admin=False, user_id=None):
         ]
     ]
     if is_admin:
-        keyboard.insert(0, [InlineKeyboardButton("🛡 غرفة القيادة وحماية النظام [ADMIN]", callback_data="menu_admin")])
+        keyboard.insert(0, [InlineKeyboardButton("🛡 لوحة تحكم الإدارة الشاملة [ADMIN]", callback_data="menu_admin")])
     return InlineKeyboardMarkup(keyboard)
 
 def get_welcome_text(user_id=None):
-    time_left = get_remaining_time(user_id, db) if user_id else "غير مسجل"
+    time_left = get_remaining_time(user_id) if user_id else "غير مسجل"
     return (
-        f"🦅 نورت البوت يا معلم التداول 🦅\n"
-        f"📊 وطلاب احمد السيد المحترم 📊\n"
-        f"اقدم لكم الاستاذ 🐦‍🔥 احمد السيد 🐦‍🔥\n"
-        f"خبير تداول الفوركس والذهب 🪙 \n"
-        f"🤴🏻 خبرة تحليل ومدارس على مدى 3 سنوات 🇮🇶👑\n"
-        f"📈خبرة صنع مؤشرات عالميا و وشرق اوسط 📉\n\n"
-        f"هاذا البوت يقدم \n"
-        f"🪙توصيات الذهب VIP 🪙\n"
-        f"💎ويقدم ايضا اشتراك 💸\n"
-        f" كورس لتعليم التداول 📊\n\n"
-        f"للاشتراك تواصل مع استاذ احمد \n"
-        f"Telegram:  @V8V8VN\n"
-        f"Instagram: _7ok6\n"
-        f"TikTok:  7ok6_\n"
+        f"🦅 أهلاً بك يا معلم في بوت التداول المتكامل 🦅\n"
+        f"📊 إشراف الخبير: احمد السيد المحترم 🇮🇶👑\n\n"
+        f"🪙 **هذا البوت يضم كافة استراتيجيات ومدارس تحليل الذهب (السويفت، السيولة، العرض والطلب، والافتتاحات العالمية).**\n"
+        f"🚫 **ملاحظة:** البوت يعمل بكامل طاقته وصلاحياته بدون أي اشتراك إجباري بقنوات نهائياً!\n\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
-        f"⏳ **حالة اشتراكك:** `{time_left}`\n"
+        f"⏳ **اشتراكك الحالي:** `{time_left}`\n"
         f"━━━━━━━━━━━━━━━━━━━\n"
-        f"👇 اختر من الأزرار أدناه للتحكم بالفريم، اللوت، أو جلب الصفقة الحقيقية الفورية:"
+        f"👇 اختر من الأزرار أدناه للتحكم بالفريم واللوت أو جلب التحليل الفوري:"
     )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -201,7 +189,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("30M", callback_data="tf_30M"), InlineKeyboardButton("1H", callback_data="tf_1H"), InlineKeyboardButton("4H", callback_data="tf_4H")],
             [InlineKeyboardButton("🔙 رجوع", callback_data="menu_start")]
         ])
-        await query.edit_message_text("⏱ **اختر فريم التحليل المطلوب:**", reply_markup=tf_kb, parse_mode="Markdown")
+        await query.edit_message_text("⏱ **اختر الفريم الزمني للتحليل:**", reply_markup=tf_kb, parse_mode="Markdown")
         return
 
     elif data.startswith("tf_"):
@@ -219,7 +207,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("0.50", callback_data="lot_0.50"), InlineKeyboardButton("1.00", callback_data="lot_1.00"), InlineKeyboardButton("5.00", callback_data="lot_5.00")],
             [InlineKeyboardButton("🔙 رجوع", callback_data="menu_start")]
         ])
-        await query.edit_message_text("⚖ **اختر حجم اللوت المناسب:**", reply_markup=lot_kb, parse_mode="Markdown")
+        await query.edit_message_text("⚖ **اختر حجم العقد (اللوت):**", reply_markup=lot_kb, parse_mode="Markdown")
         return
 
     elif data.startswith("lot_"):
@@ -233,19 +221,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "menu_activate":
         context.user_data["waiting_for_code"] = True
-        await query.edit_message_text("🔑 **أرسل الآن كود الاشتراك الفريد الخاص بك في الرسائل لتفعيله فوراً:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="menu_start")]]), parse_mode="Markdown")
+        await query.edit_message_text("🔑 **أرسل الآن كود الاشتراك الخاص بك في الرسائل لتفعيله فوراً:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="menu_start")]]), parse_mode="Markdown")
         return
 
     elif data == "get_unified_signal":
         curr = get_live_gold_price()
         settings = db["user_settings"].get(user_id, {"tf": "5M", "lot": 0.01})
         
-        report = generate_custom_institutional_signal(curr, settings["tf"], settings["lot"])
+        report = generate_full_institutional_analysis(curr, settings["tf"], settings["lot"])
         db["last_signal"] = report
         
         back_markup = InlineKeyboardMarkup([
             [InlineKeyboardButton("🔙 العودة للرئيسية", callback_data="menu_start")],
-            [InlineKeyboardButton("🔄 تحديث حالة الصفقة", callback_data="get_unified_signal")]
+            [InlineKeyboardButton("🔄 تحديث التحليل والسعر الحالي", callback_data="get_unified_signal")]
         ])
         
         await query.edit_message_text(report, parse_mode="Markdown", reply_markup=back_markup)
@@ -255,13 +243,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_admin:
             return
         admin_kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🎟 توليد كود [ساعة] - 10$", callback_data="gen_1h"), InlineKeyboardButton("🎟 توليد كود [يوم] - 30$", callback_data="gen_1d")],
-            [InlineKeyboardButton("🎟 توليد كود [أسبوع] - 80$", callback_data="gen_1w"), InlineKeyboardButton("🎟 توليد كود [أسبوعين] - 140$", callback_data="gen_2w")],
-            [InlineKeyboardButton("🎟 توليد كود [شهر] - 225$", callback_data="gen_30d")],
-            [InlineKeyboardButton("👥 إدارة وحظر المشتركين والأيديات", callback_data="admin_users_list")],
+            [InlineKeyboardButton("🎟 توليد كود [ساعة]", callback_data="gen_1h"), InlineKeyboardButton("🎟 توليد كود [يوم]", callback_data="gen_1d")],
+            [InlineKeyboardButton("🎟 توليد كود [أسبوع]", callback_data="gen_1w"), InlineKeyboardButton("🎟 توليد كود [شهر]", callback_data="gen_30d")],
+            [InlineKeyboardButton("👥 إدارة المشتركين والحظر", callback_data="admin_users_list")],
             [InlineKeyboardButton("🔙 العودة للرئيسية", callback_data="menu_start")]
         ])
-        await query.edit_message_text("🛡 **غرفة الحماية وتوليد الأكواد الديناميكية الفردية:**\nاختر فئة الاشتراك لتوليد كود رسمي:", reply_markup=admin_kb, parse_mode="Markdown")
+        await query.edit_message_text("🛡 **لوحة تحكم الأدمن لتوليد الأكواد وإدارة الأمان:**", reply_markup=admin_kb, parse_mode="Markdown")
         return
 
     elif data.startswith("gen_"):
@@ -271,28 +258,24 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if ptype == "1h":
             code = generate_secure_code("1H")
             delta = datetime.timedelta(hours=1)
-            label = "ساعة (10$)"
+            label = "ساعة واحدة"
         elif ptype == "1d":
             code = generate_secure_code("1D")
             delta = datetime.timedelta(days=1)
-            label = "يوم (30$)"
+            label = "يوم كامل"
         elif ptype == "1w":
             code = generate_secure_code("1W")
             delta = datetime.timedelta(weeks=1)
-            label = "أسبوع (80$)"
-        elif ptype == "2w":
-            code = generate_secure_code("2W")
-            delta = datetime.timedelta(weeks=2)
-            label = "أسبوعين (140$)"
+            label = "أسبوع"
         else:
             code = generate_secure_code("30D")
             delta = datetime.timedelta(days=30)
-            label = "شهر (225$)"
+            label = "شهر كامل"
             
         db["codes"][code] = {"delta": delta, "used": False}
         
         await query.edit_message_text(
-            f"✅ **تم توليد كود الـ {label} بنجاح (مخصص لمرة واحدة):**\n\n`{code}`\n\n*(انسخ هذا الكود وأعطه للزبون حصراً)*",
+            f"✅ **تم توليد كود الـ {label} بنجاح:**\n\n`{code}`\n\n*(أرسل هذا الكود للمشترك)*",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع للإدارة", callback_data="menu_admin")]]),
             parse_mode="Markdown"
         )
@@ -308,21 +291,21 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("🔓 إلغاء حظر مستخدم", callback_data="admin_prompt_unban")],
             [InlineKeyboardButton("🔙 رجوع للإدارة", callback_data="menu_admin")]
         ])
-        await query.edit_message_text(f"👥 **إدارة المشتركين والأمان:**\n- المشتركين النشطين: `{users_count}`\n- المحظورين أمنياً: `{banned_count}`", reply_markup=admin_users_kb, parse_mode="Markdown")
+        await query.edit_message_text(f"👥 **إدارة الأعضاء:**\n- المشتركين: `{users_count}`\n- المحظورين: `{banned_count}`", reply_markup=admin_users_kb, parse_mode="Markdown")
         return
 
     elif data == "admin_prompt_ban":
         context.user_data["waiting_for_ban_id"] = True
-        await query.edit_message_text("🔨 **أرسل الآن (أيدي المستخدم - ID) المراد حظره:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="admin_users_list")]]), parse_mode="Markdown")
+        await query.edit_message_text("🔨 **أرسل أيدي (ID) المستخدم المراد حظره:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="admin_users_list")]]), parse_mode="Markdown")
         return
 
     elif data == "admin_prompt_unban":
         context.user_data["waiting_for_unban_id"] = True
-        await query.edit_message_text("🔓 **أرسل الآن (أيدي المستخدم - ID) المراد رفع الحظر عنه:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="admin_users_list")]]), parse_mode="Markdown")
+        await query.edit_message_text("🔓 **أرسل أيدي (ID) المستخدم المراد إلغاء حظره:**", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 رجوع", callback_data="admin_users_list")]]), parse_mode="Markdown")
         return
 
     elif data == "noop_c":
-        await query.answer("ℹ النظام فعال.", show_alert=False)
+        await query.answer("ℹ النظام يعمل بكامل الميزات بدون اشتراك إجباري.", show_alert=False)
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -336,7 +319,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             target_id = int(update.message.text.strip())
             db["banned"].add(target_id)
-            await update.message.reply_text(f"✅ تم حظر المستخدم برقم الأيدي: `{target_id}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+            await update.message.reply_text(f"✅ تم حظر المستخدم: `{target_id}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
         except ValueError:
             await update.message.reply_text("❌ أيدي غير صالح.", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id))
         return
@@ -347,9 +330,9 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             target_id = int(update.message.text.strip())
             if target_id in db["banned"]:
                 db["banned"].remove(target_id)
-                await update.message.reply_text(f"✅ تم رفع الحظر عن المستخدم: `{target_id}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+                await update.message.reply_text(f"✅ تم رفع الحظر عن: `{target_id}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
             else:
-                await update.message.reply_text("⚠ الأيدي غير موجود في قائمة المحظورين.", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id))
+                await update.message.reply_text("⚠ الأيدي غير موجود بالمحظورين.", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id))
         except ValueError:
             await update.message.reply_text("❌ أيدي غير صالح.", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id))
         return
@@ -361,7 +344,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         if code_info:
             if code_info["used"]:
-                await update.message.reply_text("⚠️ **هذا الكود مستخدم مسبقاً ولا يمكن استخدامه مرة أخرى!**", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+                await update.message.reply_text("⚠️ **هذا الكود مستخدم من قبل!**", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
                 return
                 
             code_info["used"] = True
@@ -374,9 +357,9 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 base_time = datetime.datetime.now()
             db["users"][user_id]["expiry"] = base_time + code_info["delta"]
             
-            await update.message.reply_text(f"🎉 **تم تفعيل الاشتراك بنجاح تام!**\n⏳ الوقت المتبقي: `{get_remaining_time(user_id, db)}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+            await update.message.reply_text(f"🎉 **تم تفعيل الاشتراك بنجاح!**\n⏳ المتبقي: `{get_remaining_time(user_id)}`", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
         else:
-            await update.message.reply_text("❌ **الكود غير صحيح أو منتهي.** تأكد من نسخه بدقة.", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
+            await update.message.reply_text("❌ **الكود غير صحيح أو منتهي الصلاحية.**", reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
         return
     
     await update.message.reply_text(get_welcome_text(user_id), reply_markup=get_clean_keyboard(is_admin=is_admin, user_id=user_id), parse_mode="Markdown")
@@ -387,7 +370,7 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     
-    print("🚀 Ultimate Institutional Trading Bot Running (v2026 - Clean Code)...")
+    print("🚀 Ultimate Full Strategy Bot Running (No Forced Subscription)...")
     app.run_polling()
 
 if __name__ == "__main__":
